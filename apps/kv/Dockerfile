@@ -1,0 +1,4 @@
+FROM elixir
+VOLUME /app
+WORKDIR /app
+USER "1000:1000"
