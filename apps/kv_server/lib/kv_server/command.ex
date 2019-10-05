@@ -38,4 +38,42 @@ defmodule KVServer.Command do
       _ -> {:error, :unknown_command}
     end
   end
+
+  @doc """
+  Runs the given command.
+  """
+  def run(command, server)
+
+  def run({:create, bucket}, server) do
+    KV.Registry.create(server, bucket)
+    {:ok, "OK\r\n"}
+  end
+
+  def run({:get, bucket, key}, server) do
+    lookup(bucket, server, fn pid ->
+      value = KV.Bucket.get(pid, key)
+      {:ok, "#{value}\r\nOK\r\n"}
+    end)
+  end
+
+  def run({:put, bucket, key, value}, server) do
+    lookup(bucket, server, fn pid ->
+      KV.Bucket.put(pid, key, value)
+      {:ok, "OK\r\n"}
+    end)
+  end
+
+  def run({:delete, bucket, key}, server) do
+    lookup(bucket, server, fn pid ->
+      KV.Bucket.delete(pid, key)
+      {:ok, "OK\r\n"}
+    end)
+  end
+
+  defp lookup(bucket, server, callback) do
+    case KV.Registry.lookup(server, bucket) do
+      {:ok, pid} -> callback.(pid)
+      :error -> {:error, :not_found}
+    end
+  end
 end
